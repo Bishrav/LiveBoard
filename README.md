@@ -2,7 +2,7 @@
 
 LiveBoard is a real-time collaborative task manager built to demonstrate production-style full-stack engineering: live board updates, workspace permissions, JWT auth, PostgreSQL persistence, Redis pub/sub, Docker-based local services, and CI-ready tests.
 
-> Portfolio status: Phase 1 is complete. The frontend preview, repository documentation, environment example, Docker Compose services, and local verification checks are ready. Backend, database, Socket.io, full tests, deployment, and realtime GIF capture are the next implementation milestones.
+> Portfolio status: Phase 2 is complete at code level. The frontend preview, Prisma schema, demo seed, JWT auth, workspace/board/column/card/invite APIs, permission checks, docs, environment example, Docker Compose services, and local lint/build checks are ready. Socket.io, Redis realtime fanout, full automated API tests, deployment, and realtime GIF capture are the next implementation milestones.
 
 ## Live Links
 
@@ -24,15 +24,15 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 - Trello-style board with columns and draggable cards.
 - Live presence indicators for online teammates.
 - Activity stream for board movement and collaboration events.
-- Workspace invites and role-based access planned for owner, admin, and member roles.
+- Workspace invites and role-based access for owner, admin, and member roles.
 
 ### Engineering Features
 
 - Next.js App Router and TypeScript frontend.
-- Planned REST API for durable state changes.
+- REST API for durable auth, workspace, board, column, card, and invite state changes.
 - Planned Socket.io rooms for board-specific realtime updates.
 - Planned Redis pub/sub for multi-instance event fanout.
-- Planned PostgreSQL schema for users, workspaces, boards, columns, cards, invites, and activity events.
+- PostgreSQL schema for users, workspaces, boards, columns, cards, invites, and activity events.
 - Docker Compose for local PostgreSQL and Redis.
 - Portfolio checklist for GitHub readiness in [`docs/github-portfolio-standard.md`](docs/github-portfolio-standard.md).
 
@@ -78,6 +78,7 @@ The backend will use REST endpoints for persistent state and Socket.io events fo
 - Boards: `GET /api/boards/:boardId`, `POST /api/workspaces/:workspaceId/boards`
 - Columns: `POST /api/boards/:boardId/columns`, `PATCH /api/columns/:columnId`
 - Cards: `POST /api/columns/:columnId/cards`, `PATCH /api/cards/:cardId`, `DELETE /api/cards/:cardId`
+- Invites: `POST /api/workspaces/:workspaceId/invites`, `POST /api/invites/:token/accept`
 - Realtime: `board:join`, `presence:update`, `card:moved`, `card:updated`, `activity:created`
 - Health: `GET /api/health`
 
@@ -117,6 +118,8 @@ Never commit `.env.local` or real credentials.
 ```bash
 npm install
 docker compose up -d
+npm.cmd run db:migrate
+npm.cmd run db:seed
 npm run dev
 ```
 
@@ -124,20 +127,21 @@ Then open `http://localhost:3000`.
 
 ## Seed / Demo Credentials
 
-These are safe demo accounts planned for the seed script:
+These are safe demo accounts created by the seed script:
 
 | Role | Email | Password |
 | --- | --- | --- |
 | Admin | `admin@liveboard.dev` | `LiveBoardDemo123!` |
 | Member | `member@liveboard.dev` | `LiveBoardDemo123!` |
 
-The seed script should create two workspaces, one board, four columns, demo cards, and activity events.
+The seed script creates one workspace, one board, four columns, demo cards, and an activity event.
 
 ## Testing
 
 Current checks:
 
 ```bash
+npm.cmd run db:generate
 npm.cmd run lint
 npm.cmd run build
 ```
@@ -153,7 +157,8 @@ npm run test:socket
 Acceptance scenarios before portfolio launch:
 
 - Two users can log in with demo credentials.
-- A card moved in one browser updates in another browser without refresh.
+- Authenticated users can create workspaces, boards, columns, cards, and invites through REST APIs.
+- A card moved through the API persists its target column and position.
 - Card order persists after reload.
 - Unauthorized users cannot access private workspaces.
 - Health check confirms database and Redis connectivity.
@@ -172,7 +177,7 @@ Add the deployment URL to this README after the app is live.
 ## Roadmap
 
 - Phase 1 complete: frontend preview, documentation, env example, Docker Compose, screenshots, lint, and build.
-- Phase 2: implement auth, database schema, seed script, workspace APIs, board APIs, and permission checks.
+- Phase 2 complete: auth, database schema, seed script, workspace APIs, board/column/card APIs, invite APIs, and permission checks.
 - Phase 3: add Socket.io gateway, board rooms, Redis pub/sub, presence, realtime movement, and persistence.
 - Phase 4: add API/socket/frontend tests, realtime GIF, README final polish, and GitHub profile/pinned repo updates.
 - Phase 5: deploy production demo and add the live URL to README and CV.
