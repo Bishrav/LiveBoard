@@ -15,6 +15,10 @@ export const createWorkspaceSchema = z.object({
   name: z.string().trim().min(2).max(80),
 });
 
+export const workspaceParamsSchema = z.object({
+  workspaceId: z.string().uuid(),
+});
+
 export const createBoardSchema = z.object({
   title: z.string().trim().min(2).max(120),
 });
