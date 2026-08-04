@@ -123,6 +123,8 @@ npm.cmd run db:seed
 npm run dev
 ```
 
+The Docker Postgres service maps to host port `55432` to avoid conflicts with any local PostgreSQL service already using `5432`.
+
 Then open `http://localhost:3000`.
 
 ## Seed / Demo Credentials
