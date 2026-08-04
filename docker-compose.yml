@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: liveboard-postgres
+    environment:
+      POSTGRES_USER: liveboard
+      POSTGRES_PASSWORD: liveboard
+      POSTGRES_DB: liveboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - liveboard-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liveboard -d liveboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: liveboard-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  liveboard-postgres:

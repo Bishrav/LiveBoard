@@ -1,0 +1,12 @@
+flowchart LR
+  userA[Browser A] --> web[Next.js UI]
+  userB[Browser B] --> web
+  web --> api[REST API / Server Actions]
+  web <--> socket[Socket.io Gateway]
+  api --> auth[JWT Auth Middleware]
+  auth --> db[(PostgreSQL)]
+  socket --> redis[(Redis Pub/Sub)]
+  redis --> socket
+  socket --> db
+  ci[GitHub Actions] --> build[Lint / Build / Tests]
+  build --> deploy[Railway or Vercel Deploy]

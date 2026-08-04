@@ -1,0 +1,75 @@
+erDiagram
+  USERS ||--o{ WORKSPACE_MEMBERS : joins
+  WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
+  WORKSPACES ||--o{ BOARDS : owns
+  BOARDS ||--o{ COLUMNS : contains
+  COLUMNS ||--o{ CARDS : contains
+  WORKSPACES ||--o{ INVITES : issues
+  BOARDS ||--o{ ACTIVITY_EVENTS : records
+  USERS ||--o{ ACTIVITY_EVENTS : creates
+
+  USERS {
+    uuid id PK
+    string name
+    string email UK
+    string password_hash
+    datetime created_at
+  }
+
+  WORKSPACES {
+    uuid id PK
+    string name
+    string slug UK
+    uuid owner_id FK
+    datetime created_at
+  }
+
+  WORKSPACE_MEMBERS {
+    uuid id PK
+    uuid workspace_id FK
+    uuid user_id FK
+    string role
+    datetime joined_at
+  }
+
+  BOARDS {
+    uuid id PK
+    uuid workspace_id FK
+    string title
+    datetime created_at
+  }
+
+  COLUMNS {
+    uuid id PK
+    uuid board_id FK
+    string title
+    int position
+  }
+
+  CARDS {
+    uuid id PK
+    uuid column_id FK
+    string title
+    string description
+    int position
+    uuid assignee_id FK
+    datetime updated_at
+  }
+
+  INVITES {
+    uuid id PK
+    uuid workspace_id FK
+    string email
+    string role
+    string token_hash
+    datetime expires_at
+  }
+
+  ACTIVITY_EVENTS {
+    uuid id PK
+    uuid board_id FK
+    uuid actor_id FK
+    string type
+    json metadata
+    datetime created_at
+  }
