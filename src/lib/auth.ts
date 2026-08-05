@@ -51,9 +51,7 @@ export function readBearerToken(request: Request) {
   return header.slice("Bearer ".length).trim();
 }
 
-export async function getCurrentUser(request: Request) {
-  const token = readBearerToken(request);
-
+export async function getUserFromToken(token: string | null) {
   if (!token) {
     return null;
   }
@@ -70,6 +68,10 @@ export async function getCurrentUser(request: Request) {
   } catch {
     return null;
   }
+}
+
+export async function getCurrentUser(request: Request) {
+  return getUserFromToken(readBearerToken(request));
 }
 
 export async function requireUser(request: Request) {
