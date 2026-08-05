@@ -10,6 +10,12 @@ export default defineConfig({
     },
     globals: true,
     include: ["tests/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: ["src/**/*.{ts,tsx}", "server.ts"],
+      exclude: ["src/app/page.tsx", "src/app/layout.tsx"],
+    },
   },
   resolve: {
     alias: {
