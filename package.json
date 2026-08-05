@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:socket": "tsx watch server.ts",
+    "dev:socket": "tsx server.ts",
     "build": "next build",
     "start": "next start",
     "start:socket": "tsx server.ts",

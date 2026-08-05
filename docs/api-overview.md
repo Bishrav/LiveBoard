@@ -36,7 +36,7 @@ Invite creation requires an owner/admin workspace role. Invite acceptance requir
 
 All board, column, and card routes require workspace membership. Board creation, column creation, and card mutations write activity events for later realtime fanout.
 
-## Phase 2 Status
+## Phase 3 Status
 
 Implemented:
 
@@ -47,24 +47,34 @@ Implemented:
 - Card creation/update/move/delete.
 - Workspace invite creation and acceptance.
 - Prisma schema and demo seed data.
+- Custom Socket.io server wrapper for Next.js App Router.
+- JWT-authenticated Socket.io connections.
+- Board room join/leave permission checks.
+- Presence snapshots for active board users.
+- Card create, update, move, and delete socket events.
+- Redis socket adapter when `REDIS_URL` is configured.
 
 Pending for later phases:
 
-- Socket.io realtime events.
-- Redis pub/sub fanout.
-- Health route implementation.
 - Full automated API/integration tests.
+- Deployment health check endpoint.
 
 ## Realtime Events
 
 | Event | Direction | Payload |
 | --- | --- | --- |
 | `board:join` | client to server | `{ boardId }` |
-| `presence:update` | server to client | `{ userId, name, cursor, status }` |
-| `card:moved` | both | `{ cardId, fromColumnId, toColumnId, position }` |
-| `card:updated` | both | `{ cardId, fields }` |
-| `column:updated` | both | `{ columnId, fields }` |
-| `activity:created` | server to client | `{ id, type, actor, metadata, createdAt }` |
+| `board:leave` | client to server | `{ boardId }` |
+| `presence:snapshot` | server to client | `{ boardId, users }` |
+| `board:user-joined` | server to client | `{ boardId, user }` |
+| `board:user-left` | server to client | `{ boardId, user }` |
+| `card:create` | client to server | `{ columnId, title, description?, assigneeId? }` |
+| `card:update` | client to server | `{ cardId, title?, description?, assigneeId?, columnId?, position? }` |
+| `card:delete` | client to server | `{ cardId }` |
+| `card:created` | server to client | `{ boardId, card, actor }` |
+| `card:updated` | server to client | `{ boardId, card, actor }` |
+| `card:moved` | server to client | `{ boardId, card, actor, fromColumnId, toColumnId }` |
+| `card:deleted` | server to client | `{ boardId, cardId, columnId, actor }` |
 
 ## Health
 

@@ -2,7 +2,7 @@
 
 LiveBoard is a real-time collaborative task manager built to demonstrate production-style full-stack engineering: live board updates, workspace permissions, JWT auth, PostgreSQL persistence, Redis pub/sub, Docker-based local services, and CI-ready tests.
 
-> Portfolio status: Phase 2 is complete at code level. The frontend preview, Prisma schema, demo seed, JWT auth, workspace/board/column/card/invite APIs, permission checks, docs, environment example, Docker Compose services, and local lint/build checks are ready. Socket.io, Redis realtime fanout, full automated API tests, deployment, and realtime GIF capture are the next implementation milestones.
+> Portfolio status: Phase 3 is complete at code level. The frontend preview, Prisma schema, demo seed, JWT auth, REST APIs, permission checks, custom Socket.io server, board rooms, live presence, realtime card events, Redis pub/sub adapter, Docker services, docs, screenshots, and local lint/build checks are ready. Full automated tests, deployment, and realtime GIF capture are the next implementation milestones.
 
 ## Live Links
 
@@ -11,7 +11,8 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 | Live demo | Coming after deployment |
 | Desktop preview | [`docs/screenshots/dashboard.png`](docs/screenshots/dashboard.png) |
 | Mobile preview | [`docs/screenshots/mobile-board.png`](docs/screenshots/mobile-board.png) |
-| Realtime demo GIF | Coming after Socket.io flow is implemented |
+| Realtime screenshot | [`docs/screenshots/phase-3-realtime-board.png`](docs/screenshots/phase-3-realtime-board.png) |
+| Realtime demo GIF | Coming after two-browser capture |
 | Architecture diagram | [`docs/architecture.mmd`](docs/architecture.mmd) |
 | Schema diagram | [`docs/schema.mmd`](docs/schema.mmd) |
 | API overview | [`docs/api-overview.md`](docs/api-overview.md) |
@@ -30,8 +31,11 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 
 - Next.js App Router and TypeScript frontend.
 - REST API for durable auth, workspace, board, column, card, and invite state changes.
-- Planned Socket.io rooms for board-specific realtime updates.
-- Planned Redis pub/sub for multi-instance event fanout.
+- Custom Next.js HTTP server wrapper for Socket.io support.
+- Authenticated Socket.io rooms for board-specific realtime updates.
+- Redis pub/sub adapter for multi-instance socket event fanout.
+- Live presence snapshots for joined board users.
+- Realtime card create, update, move, and delete events backed by PostgreSQL persistence.
 - PostgreSQL schema for users, workspaces, boards, columns, cards, invites, and activity events.
 - Docker Compose for local PostgreSQL and Redis.
 - Portfolio checklist for GitHub readiness in [`docs/github-portfolio-standard.md`](docs/github-portfolio-standard.md).
@@ -71,7 +75,7 @@ Full ERD: [`docs/schema.mmd`](docs/schema.mmd)
 
 ## API Route Overview
 
-The backend will use REST endpoints for persistent state and Socket.io events for realtime board updates.
+The backend uses REST endpoints for persistent state and Socket.io events for realtime board updates.
 
 - Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
 - Workspaces: `GET /api/workspaces`, `POST /api/workspaces`, `POST /api/workspaces/:workspaceId/invites`
@@ -79,8 +83,7 @@ The backend will use REST endpoints for persistent state and Socket.io events fo
 - Columns: `POST /api/boards/:boardId/columns`, `PATCH /api/columns/:columnId`
 - Cards: `POST /api/columns/:columnId/cards`, `PATCH /api/cards/:cardId`, `DELETE /api/cards/:cardId`
 - Invites: `POST /api/workspaces/:workspaceId/invites`, `POST /api/invites/:token/accept`
-- Realtime: `board:join`, `presence:update`, `card:moved`, `card:updated`, `activity:created`
-- Health: `GET /api/health`
+- Realtime: `board:join`, `board:leave`, `presence:snapshot`, `card:create`, `card:update`, `card:delete`, `card:created`, `card:updated`, `card:moved`, `card:deleted`
 
 Full route table: [`docs/api-overview.md`](docs/api-overview.md)
 
@@ -94,7 +97,13 @@ Full route table: [`docs/api-overview.md`](docs/api-overview.md)
 
 ![LiveBoard mobile board preview](docs/screenshots/mobile-board.png)
 
-Realtime two-browser GIF capture is intentionally deferred until Phase 3, after Socket.io rooms and Redis pub/sub are implemented.
+Realtime two-browser GIF capture is deferred until the deployment URL is available.
+
+### Phase 3 Realtime Board
+
+![LiveBoard realtime Socket.io board](docs/screenshots/phase-3-realtime-board.png)
+
+Two-browser GIF capture is deferred until the deployment URL is available, but the current board screen is backed by the real seeded API and Socket.io events.
 
 ## Environment Variables
 
@@ -127,7 +136,7 @@ The Docker Postgres service maps to host port `55432` to avoid conflicts with an
 
 Then open `http://localhost:3000`.
 
-Use `npm.cmd run dev` only when testing the plain Next.js app without Socket.io. Phase 3 realtime development uses the custom server wrapper through `npm.cmd run dev:socket`.
+Use `npm.cmd run dev` only when testing the plain Next.js app without Socket.io. Realtime development uses the custom server wrapper through `npm.cmd run dev:socket`.
 
 ## Seed / Demo Credentials
 
@@ -164,8 +173,10 @@ Acceptance scenarios before portfolio launch:
 - Authenticated users can create workspaces, boards, columns, cards, and invites through REST APIs.
 - A card moved through the API persists its target column and position.
 - Card order persists after reload.
+- Authenticated Socket.io users can join board rooms and receive presence snapshots.
+- Card create/update/move/delete socket events persist to PostgreSQL and broadcast to joined clients.
+- Redis adapter connects when `REDIS_URL` is configured.
 - Unauthorized users cannot access private workspaces.
-- Health check confirms database and Redis connectivity.
 
 ## Deployment
 
@@ -182,6 +193,6 @@ Add the deployment URL to this README after the app is live.
 
 - Phase 1 complete: frontend preview, documentation, env example, Docker Compose, screenshots, lint, and build.
 - Phase 2 complete: auth, database schema, seed script, workspace APIs, board/column/card APIs, invite APIs, and permission checks.
-- Phase 3 in progress: custom Socket.io server wrapper, board rooms, Redis pub/sub, presence, realtime movement, and persistence.
+- Phase 3 complete: custom Socket.io server wrapper, authenticated board rooms, Redis pub/sub, presence, realtime card create/update/move/delete, and frontend socket integration.
 - Phase 4: add API/socket/frontend tests, realtime GIF, README final polish, and GitHub profile/pinned repo updates.
 - Phase 5: deploy production demo and add the live URL to README and CV.

@@ -213,14 +213,18 @@ type ServerToClientEventsEmitter = Pick<
 >;
 
 async function main() {
-  const app = next({ dev, hostname, port });
-  const handle = app.getRequestHandler();
-
-  await app.prepare();
-
   const httpServer = createServer((request, response) => {
     handle(request, response);
   });
+  const app = next({
+    dev,
+    hostname,
+    port,
+    httpServer,
+  });
+  const handle = app.getRequestHandler();
+
+  await app.prepare();
 
   const io = new Server<
     ClientToServerEvents,
@@ -232,6 +236,7 @@ async function main() {
       origin: process.env.SOCKET_CORS_ORIGIN ?? "http://localhost:3000",
       methods: ["GET", "POST"],
     },
+    destroyUpgrade: false,
   });
 
   if (process.env.REDIS_URL) {
