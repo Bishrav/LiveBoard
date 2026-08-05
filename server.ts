@@ -1,6 +1,8 @@
 import { createServer } from "http";
 import { ActivityType } from "@prisma/client";
+import { createAdapter } from "@socket.io/redis-adapter";
 import next from "next";
+import { createClient } from "redis";
 import { Server, type Socket } from "socket.io";
 import { getUserFromToken, type AuthUser } from "@/lib/auth";
 import { requireBoardRole, requireCardRole, requireColumnRole } from "@/lib/permissions";
@@ -231,6 +233,15 @@ async function main() {
       methods: ["GET", "POST"],
     },
   });
+
+  if (process.env.REDIS_URL) {
+    const pubClient = createClient({ url: process.env.REDIS_URL });
+    const subClient = pubClient.duplicate();
+
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log("Socket.io Redis adapter connected");
+  }
 
   io.use(async (socket, nextMiddleware) => {
     const user = await getUserFromToken(getSocketToken(socket));
