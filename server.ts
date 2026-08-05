@@ -29,6 +29,10 @@ type ServerToClientEvents = {
     transport: string;
     user: AuthUser;
   }) => void;
+  "presence:snapshot": (payload: {
+    boardId: string;
+    users: Array<AuthUser & { socketIds: string[] }>;
+  }) => void;
   "board:user-joined": (payload: { boardId: string; user: AuthUser }) => void;
   "board:user-left": (payload: { boardId: string; user: AuthUser }) => void;
 };
@@ -48,6 +52,7 @@ type LiveBoardSocket = Socket<
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME ?? "0.0.0.0";
 const port = Number(process.env.PORT ?? 3000);
+const presenceByBoard = new Map<string, Map<string, AuthUser & { socketIds: Set<string> }>>();
 
 function getSocketToken(socket: LiveBoardSocket) {
   const authToken = socket.handshake.auth.token;
@@ -68,6 +73,73 @@ function getSocketToken(socket: LiveBoardSocket) {
 function boardRoom(boardId: string) {
   return `board:${boardId}`;
 }
+
+function serializePresence(boardId: string) {
+  const users = presenceByBoard.get(boardId);
+
+  if (!users) {
+    return [];
+  }
+
+  return Array.from(users.values()).map((user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    socketIds: Array.from(user.socketIds),
+  }));
+}
+
+function addPresence(boardId: string, socket: LiveBoardSocket) {
+  const boardPresence = presenceByBoard.get(boardId) ?? new Map();
+  const existingUser = boardPresence.get(socket.data.user.id);
+
+  if (existingUser) {
+    existingUser.socketIds.add(socket.id);
+  } else {
+    boardPresence.set(socket.data.user.id, {
+      ...socket.data.user,
+      socketIds: new Set([socket.id]),
+    });
+  }
+
+  presenceByBoard.set(boardId, boardPresence);
+}
+
+function removePresence(boardId: string, socket: LiveBoardSocket) {
+  const boardPresence = presenceByBoard.get(boardId);
+
+  if (!boardPresence) {
+    return;
+  }
+
+  const existingUser = boardPresence.get(socket.data.user.id);
+  existingUser?.socketIds.delete(socket.id);
+
+  if (existingUser && existingUser.socketIds.size === 0) {
+    boardPresence.delete(socket.data.user.id);
+  }
+
+  if (boardPresence.size === 0) {
+    presenceByBoard.delete(boardId);
+  }
+}
+
+function emitPresenceSnapshot(io: ServerToClientEventsEmitter, boardId: string) {
+  io.to(boardRoom(boardId)).emit("presence:snapshot", {
+    boardId,
+    users: serializePresence(boardId),
+  });
+}
+
+type ServerToClientEventsEmitter = Pick<
+  Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    Record<string, never>,
+    SocketData
+  >,
+  "to"
+>;
 
 async function main() {
   const app = next({ dev, hostname, port });
@@ -131,11 +203,13 @@ async function main() {
         await requireBoardRole(boardId, socket.data.user.id);
         socket.join(boardRoom(boardId));
         socket.data.boardIds.add(boardId);
+        addPresence(boardId, socket);
 
         socket.to(boardRoom(boardId)).emit("board:user-joined", {
           boardId,
           user: socket.data.user,
         });
+        emitPresenceSnapshot(io, boardId);
 
         callback?.({ ok: true, boardId });
       } catch (error) {
@@ -159,20 +233,24 @@ async function main() {
 
       socket.leave(boardRoom(boardId));
       socket.data.boardIds.delete(boardId);
+      removePresence(boardId, socket);
       socket.to(boardRoom(boardId)).emit("board:user-left", {
         boardId,
         user: socket.data.user,
       });
+      emitPresenceSnapshot(io, boardId);
 
       callback?.({ ok: true, boardId });
     });
 
     socket.on("disconnect", () => {
       for (const boardId of socket.data.boardIds) {
+        removePresence(boardId, socket);
         socket.to(boardRoom(boardId)).emit("board:user-left", {
           boardId,
           user: socket.data.user,
         });
+        emitPresenceSnapshot(io, boardId);
       }
     });
   });
