@@ -36,7 +36,7 @@ Invite creation requires an owner/admin workspace role. Invite acceptance requir
 
 All board, column, and card routes require workspace membership. Board creation, column creation, and card mutations write activity events for later realtime fanout.
 
-## Phase 3 Status
+## Phase 4 Status
 
 Implemented:
 
@@ -53,10 +53,13 @@ Implemented:
 - Presence snapshots for active board users.
 - Card create, update, move, and delete socket events.
 - Redis socket adapter when `REDIS_URL` is configured.
+- Unit tests for shared utility logic.
+- API integration tests for auth, board access, and card movement persistence.
+- Socket.io integration tests for rooms, presence, realtime broadcasts, and database persistence.
+- GitHub Actions CI with PostgreSQL and Redis services.
 
 Pending for later phases:
 
-- Full automated API/integration tests.
 - Deployment health check endpoint.
 
 ## Realtime Events

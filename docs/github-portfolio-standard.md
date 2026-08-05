@@ -4,19 +4,19 @@ Use this checklist before pinning a repo or adding it to the CV.
 
 ## Repository
 
-- Clear project title and one-line value proposition.
-- Live demo link near the top.
-- Screenshots or a short GIF showing the real application.
-- Feature list grouped by user-facing features and engineering features.
-- Architecture diagram in Mermaid or image form.
-- Schema diagram for database-backed projects.
-- API route overview for backend/full-stack projects.
-- `.env.example` with placeholders only.
-- Local setup steps that work from a clean clone.
-- Seed/demo credentials that are safe and not personal.
-- Testing instructions with exact commands.
-- Deployment notes with required environment variables.
-- Known limitations or roadmap section.
+- [x] Clear project title and one-line value proposition.
+- [ ] Live demo link near the top.
+- [x] Screenshots or a short GIF showing the real application.
+- [x] Feature list grouped by user-facing features and engineering features.
+- [x] Architecture diagram in Mermaid or image form.
+- [x] Schema diagram for database-backed projects.
+- [x] API route overview for backend/full-stack projects.
+- [x] `.env.example` with placeholders only.
+- [x] Local setup steps that work from a clean clone.
+- [x] Seed/demo credentials that are safe and not personal.
+- [x] Testing instructions with exact commands.
+- [x] Deployment notes with required environment variables.
+- [x] Known limitations or roadmap section.
 
 ## GitHub Profile
 

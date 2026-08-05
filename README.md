@@ -2,7 +2,7 @@
 
 LiveBoard is a real-time collaborative task manager built to demonstrate production-style full-stack engineering: live board updates, workspace permissions, JWT auth, PostgreSQL persistence, Redis pub/sub, Docker-based local services, and CI-ready tests.
 
-> Portfolio status: Phase 3 is complete at code level. The frontend preview, Prisma schema, demo seed, JWT auth, REST APIs, permission checks, custom Socket.io server, board rooms, live presence, realtime card events, Redis pub/sub adapter, Docker services, docs, screenshots, and local lint/build checks are ready. Full automated tests, deployment, and realtime GIF capture are the next implementation milestones.
+> Portfolio status: Phase 4 is complete at code level. The frontend preview, Prisma schema, demo seed, JWT auth, REST APIs, permission checks, custom Socket.io server, board rooms, live presence, realtime card events, Redis pub/sub adapter, automated unit/API/socket tests, GitHub Actions CI, coverage tooling, docs, screenshots, Docker services, lint, and build checks are ready. Deployment is the next implementation milestone.
 
 ## Live Links
 
@@ -12,7 +12,7 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 | Desktop preview | [`docs/screenshots/dashboard.png`](docs/screenshots/dashboard.png) |
 | Mobile preview | [`docs/screenshots/mobile-board.png`](docs/screenshots/mobile-board.png) |
 | Realtime screenshot | [`docs/screenshots/phase-3-realtime-board.png`](docs/screenshots/phase-3-realtime-board.png) |
-| Realtime demo GIF | Coming after two-browser capture |
+| Two-client realtime proof | [`Client A`](docs/screenshots/realtime-client-a.png) / [`Client B`](docs/screenshots/realtime-client-b.png) |
 | Architecture diagram | [`docs/architecture.mmd`](docs/architecture.mmd) |
 | Schema diagram | [`docs/schema.mmd`](docs/schema.mmd) |
 | API overview | [`docs/api-overview.md`](docs/api-overview.md) |
@@ -36,6 +36,8 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 - Redis pub/sub adapter for multi-instance socket event fanout.
 - Live presence snapshots for joined board users.
 - Realtime card create, update, move, and delete events backed by PostgreSQL persistence.
+- Unit, API integration, and Socket.io integration tests with Vitest.
+- GitHub Actions CI for Prisma generation, migrations, tests, lint, and production build.
 - PostgreSQL schema for users, workspaces, boards, columns, cards, invites, and activity events.
 - Docker Compose for local PostgreSQL and Redis.
 - Portfolio checklist for GitHub readiness in [`docs/github-portfolio-standard.md`](docs/github-portfolio-standard.md).
@@ -97,13 +99,19 @@ Full route table: [`docs/api-overview.md`](docs/api-overview.md)
 
 ![LiveBoard mobile board preview](docs/screenshots/mobile-board.png)
 
-Realtime two-browser GIF capture is deferred until the deployment URL is available.
-
 ### Phase 3 Realtime Board
 
 ![LiveBoard realtime Socket.io board](docs/screenshots/phase-3-realtime-board.png)
 
-Two-browser GIF capture is deferred until the deployment URL is available, but the current board screen is backed by the real seeded API and Socket.io events.
+### Two-Client Realtime Proof
+
+Client A creates a card through Socket.io:
+
+![LiveBoard realtime client A](docs/screenshots/realtime-client-a.png)
+
+Client B receives the same card without refreshing:
+
+![LiveBoard realtime client B](docs/screenshots/realtime-client-b.png)
 
 ## Environment Variables
 
@@ -151,23 +159,24 @@ The seed script creates one workspace, one board, four columns, demo cards, and 
 
 ## Testing
 
-Current checks:
+Current local checks:
 
 ```bash
 npm.cmd run db:generate
+npm.cmd run test
+npm.cmd run test:coverage
 npm.cmd run lint
 npm.cmd run build
 ```
 
-Planned checks:
+Current automated coverage:
 
-```bash
-npm run test
-npm run test:api
-npm run test:socket
-```
+- Unit tests for slug generation, ordered positions, and invite token hashing.
+- API integration tests for auth, board access, card creation, movement persistence, and private board authorization.
+- Socket.io integration tests for authenticated room joins, presence snapshots, non-member rejection, realtime card creation, realtime movement broadcasts, and PostgreSQL persistence.
+- GitHub Actions CI runs PostgreSQL, Redis, Prisma generation, migrations, tests, lint, and build on push and pull request.
 
-Acceptance scenarios before portfolio launch:
+Verified acceptance scenarios:
 
 - Two users can log in with demo credentials.
 - Authenticated users can create workspaces, boards, columns, cards, and invites through REST APIs.
@@ -194,5 +203,5 @@ Add the deployment URL to this README after the app is live.
 - Phase 1 complete: frontend preview, documentation, env example, Docker Compose, screenshots, lint, and build.
 - Phase 2 complete: auth, database schema, seed script, workspace APIs, board/column/card APIs, invite APIs, and permission checks.
 - Phase 3 complete: custom Socket.io server wrapper, authenticated board rooms, Redis pub/sub, presence, realtime card create/update/move/delete, and frontend socket integration.
-- Phase 4: add API/socket/frontend tests, realtime GIF, README final polish, and GitHub profile/pinned repo updates.
+- Phase 4 complete: unit tests, API integration tests, Socket.io integration tests, coverage command, GitHub Actions CI, realtime proof screenshots, and README polish.
 - Phase 5: deploy production demo and add the live URL to README and CV.
