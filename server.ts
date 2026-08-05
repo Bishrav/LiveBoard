@@ -1,8 +1,15 @@
 import { createServer } from "http";
+import { ActivityType } from "@prisma/client";
 import next from "next";
 import { Server, type Socket } from "socket.io";
 import { getUserFromToken, type AuthUser } from "@/lib/auth";
-import { requireBoardRole } from "@/lib/permissions";
+import { requireBoardRole, requireCardRole, requireColumnRole } from "@/lib/permissions";
+import { nextPosition } from "@/lib/positions";
+import { prisma } from "@/lib/prisma";
+import {
+  createCardSchema,
+  updateCardSchema,
+} from "@/lib/validation";
 
 type ClientToServerEvents = {
   "ping:client": (
@@ -21,6 +28,25 @@ type ClientToServerEvents = {
     payload: { boardId?: string },
     callback?: (response: { ok: boolean; boardId?: string; error?: string }) => void,
   ) => void;
+  "card:create": (
+    payload: { columnId?: string; title?: string; description?: string; assigneeId?: string },
+    callback?: (response: { ok: boolean; card?: CardPayload; error?: string }) => void,
+  ) => void;
+  "card:update": (
+    payload: {
+      cardId?: string;
+      title?: string;
+      description?: string | null;
+      assigneeId?: string | null;
+      columnId?: string;
+      position?: number;
+    },
+    callback?: (response: { ok: boolean; card?: CardPayload; error?: string }) => void,
+  ) => void;
+  "card:delete": (
+    payload: { cardId?: string },
+    callback?: (response: { ok: boolean; cardId?: string; error?: string }) => void,
+  ) => void;
 };
 
 type ServerToClientEvents = {
@@ -35,6 +61,21 @@ type ServerToClientEvents = {
   }) => void;
   "board:user-joined": (payload: { boardId: string; user: AuthUser }) => void;
   "board:user-left": (payload: { boardId: string; user: AuthUser }) => void;
+  "card:created": (payload: { boardId: string; card: CardPayload; actor: AuthUser }) => void;
+  "card:updated": (payload: { boardId: string; card: CardPayload; actor: AuthUser }) => void;
+  "card:moved": (payload: {
+    boardId: string;
+    card: CardPayload;
+    actor: AuthUser;
+    fromColumnId: string;
+    toColumnId: string;
+  }) => void;
+  "card:deleted": (payload: {
+    boardId: string;
+    cardId: string;
+    columnId: string;
+    actor: AuthUser;
+  }) => void;
 };
 
 type SocketData = {
@@ -48,6 +89,18 @@ type LiveBoardSocket = Socket<
   Record<string, never>,
   SocketData
 >;
+
+type CardPayload = {
+  id: string;
+  columnId: string;
+  title: string;
+  description: string | null;
+  position: number;
+  assigneeId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  assignee?: AuthUser | null;
+};
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME ?? "0.0.0.0";
@@ -129,6 +182,22 @@ function emitPresenceSnapshot(io: ServerToClientEventsEmitter, boardId: string) 
     boardId,
     users: serializePresence(boardId),
   });
+}
+
+function cardSelect() {
+  return {
+    id: true,
+    columnId: true,
+    title: true,
+    description: true,
+    position: true,
+    assigneeId: true,
+    createdAt: true,
+    updatedAt: true,
+    assignee: {
+      select: { id: true, name: true, email: true },
+    },
+  };
 }
 
 type ServerToClientEventsEmitter = Pick<
@@ -241,6 +310,192 @@ async function main() {
       emitPresenceSnapshot(io, boardId);
 
       callback?.({ ok: true, boardId });
+    });
+
+    socket.on("card:create", async (payload, callback) => {
+      const parsed = createCardSchema.safeParse(payload);
+      const columnId = payload.columnId;
+
+      if (!columnId || !parsed.success) {
+        callback?.({ ok: false, error: "Invalid card details" });
+        return;
+      }
+
+      try {
+        await requireColumnRole(columnId, socket.data.user.id);
+
+        const column = await prisma.column.findUnique({
+          where: { id: columnId },
+          select: { boardId: true },
+        });
+
+        if (!column) {
+          callback?.({ ok: false, error: "Column not found" });
+          return;
+        }
+
+        const position = await nextPosition(
+          () =>
+            prisma.card.findFirst({
+              where: { columnId },
+              orderBy: { position: "desc" },
+            }),
+          (card) => card.position,
+        );
+
+        const card = await prisma.card.create({
+          data: {
+            columnId,
+            title: parsed.data.title,
+            description: parsed.data.description,
+            assigneeId: parsed.data.assigneeId,
+            position,
+          },
+          select: cardSelect(),
+        });
+
+        await prisma.activityEvent.create({
+          data: {
+            boardId: column.boardId,
+            actorId: socket.data.user.id,
+            type: ActivityType.CARD_CREATED,
+            metadata: { cardId: card.id, title: card.title },
+          },
+        });
+
+        io.to(boardRoom(column.boardId)).emit("card:created", {
+          boardId: column.boardId,
+          card,
+          actor: socket.data.user,
+        });
+        callback?.({ ok: true, card });
+      } catch {
+        callback?.({ ok: false, error: "Forbidden" });
+      }
+    });
+
+    socket.on("card:update", async (payload, callback) => {
+      const cardId = payload.cardId;
+      const parsed = updateCardSchema.safeParse(payload);
+
+      if (!cardId || !parsed.success) {
+        callback?.({ ok: false, error: "Invalid card update" });
+        return;
+      }
+
+      const data = Object.fromEntries(
+        Object.entries({
+          title: payload.title,
+          description: payload.description,
+          assigneeId: payload.assigneeId,
+          columnId: payload.columnId,
+          position: payload.position,
+        }).filter(([, value]) => value !== undefined),
+      );
+      const update = updateCardSchema.safeParse(data);
+
+      if (!update.success || Object.keys(update.data).length === 0) {
+        callback?.({ ok: false, error: "Invalid card update" });
+        return;
+      }
+
+      try {
+        await requireCardRole(cardId, socket.data.user.id);
+
+        const existingCard = await prisma.card.findUnique({
+          where: { id: cardId },
+          select: {
+            columnId: true,
+            column: { select: { boardId: true } },
+          },
+        });
+
+        if (!existingCard) {
+          callback?.({ ok: false, error: "Card not found" });
+          return;
+        }
+
+        const card = await prisma.card.update({
+          where: { id: cardId },
+          data: update.data,
+          select: cardSelect(),
+        });
+        const isMove =
+          update.data.columnId !== undefined || update.data.position !== undefined;
+
+        await prisma.activityEvent.create({
+          data: {
+            boardId: existingCard.column.boardId,
+            actorId: socket.data.user.id,
+            type: isMove ? ActivityType.CARD_MOVED : ActivityType.CARD_UPDATED,
+            metadata: {
+              cardId: card.id,
+              fromColumnId: existingCard.columnId,
+              toColumnId: card.columnId,
+              position: card.position,
+            },
+          },
+        });
+
+        if (isMove) {
+          io.to(boardRoom(existingCard.column.boardId)).emit("card:moved", {
+            boardId: existingCard.column.boardId,
+            card,
+            actor: socket.data.user,
+            fromColumnId: existingCard.columnId,
+            toColumnId: card.columnId,
+          });
+        } else {
+          io.to(boardRoom(existingCard.column.boardId)).emit("card:updated", {
+            boardId: existingCard.column.boardId,
+            card,
+            actor: socket.data.user,
+          });
+        }
+
+        callback?.({ ok: true, card });
+      } catch {
+        callback?.({ ok: false, error: "Forbidden" });
+      }
+    });
+
+    socket.on("card:delete", async (payload, callback) => {
+      const cardId = payload.cardId;
+
+      if (!cardId) {
+        callback?.({ ok: false, error: "cardId is required" });
+        return;
+      }
+
+      try {
+        await requireCardRole(cardId, socket.data.user.id);
+
+        const existingCard = await prisma.card.findUnique({
+          where: { id: cardId },
+          select: {
+            id: true,
+            columnId: true,
+            column: { select: { boardId: true } },
+          },
+        });
+
+        if (!existingCard) {
+          callback?.({ ok: false, error: "Card not found" });
+          return;
+        }
+
+        await prisma.card.delete({ where: { id: cardId } });
+
+        io.to(boardRoom(existingCard.column.boardId)).emit("card:deleted", {
+          boardId: existingCard.column.boardId,
+          cardId,
+          columnId: existingCard.columnId,
+          actor: socket.data.user,
+        });
+        callback?.({ ok: true, cardId });
+      } catch {
+        callback?.({ ok: false, error: "Forbidden" });
+      }
     });
 
     socket.on("disconnect", () => {
