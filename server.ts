@@ -92,6 +92,13 @@ type LiveBoardSocket = Socket<
   SocketData
 >;
 
+type LiveBoardServer = Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  Record<string, never>,
+  SocketData
+>;
+
 type CardPayload = {
   id: string;
   columnId: string;
@@ -203,51 +210,11 @@ function cardSelect() {
 }
 
 type ServerToClientEventsEmitter = Pick<
-  Server<
-    ClientToServerEvents,
-    ServerToClientEvents,
-    Record<string, never>,
-    SocketData
-  >,
+  LiveBoardServer,
   "to"
 >;
 
-async function main() {
-  const httpServer = createServer((request, response) => {
-    handle(request, response);
-  });
-  const app = next({
-    dev,
-    hostname,
-    port,
-    httpServer,
-  });
-  const handle = app.getRequestHandler();
-
-  await app.prepare();
-
-  const io = new Server<
-    ClientToServerEvents,
-    ServerToClientEvents,
-    Record<string, never>,
-    SocketData
-  >(httpServer, {
-    cors: {
-      origin: process.env.SOCKET_CORS_ORIGIN ?? "http://localhost:3000",
-      methods: ["GET", "POST"],
-    },
-    destroyUpgrade: false,
-  });
-
-  if (process.env.REDIS_URL) {
-    const pubClient = createClient({ url: process.env.REDIS_URL });
-    const subClient = pubClient.duplicate();
-
-    await Promise.all([pubClient.connect(), subClient.connect()]);
-    io.adapter(createAdapter(pubClient, subClient));
-    console.log("Socket.io Redis adapter connected");
-  }
-
+export function registerLiveBoardSocket(io: LiveBoardServer) {
   io.use(async (socket, nextMiddleware) => {
     const user = await getUserFromToken(getSocketToken(socket));
 
@@ -525,13 +492,54 @@ async function main() {
       }
     });
   });
+}
+
+async function main() {
+  const httpServer = createServer((request, response) => {
+    handle(request, response);
+  });
+  const app = next({
+    dev,
+    hostname,
+    port,
+    httpServer,
+  });
+  const handle = app.getRequestHandler();
+
+  await app.prepare();
+
+  const io = new Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    Record<string, never>,
+    SocketData
+  >(httpServer, {
+    cors: {
+      origin: process.env.SOCKET_CORS_ORIGIN ?? "http://localhost:3000",
+      methods: ["GET", "POST"],
+    },
+    destroyUpgrade: false,
+  });
+
+  if (process.env.REDIS_URL) {
+    const pubClient = createClient({ url: process.env.REDIS_URL });
+    const subClient = pubClient.duplicate();
+
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log("Socket.io Redis adapter connected");
+  }
+
+  registerLiveBoardSocket(io);
 
   httpServer.listen(port, hostname, () => {
     console.log(`LiveBoard ready on http://${hostname}:${port}`);
   });
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (process.env.NODE_ENV !== "test") {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
