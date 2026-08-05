@@ -120,12 +120,14 @@ npm install
 docker compose up -d
 npm.cmd run db:migrate
 npm.cmd run db:seed
-npm run dev
+npm.cmd run dev:socket
 ```
 
 The Docker Postgres service maps to host port `55432` to avoid conflicts with any local PostgreSQL service already using `5432`.
 
 Then open `http://localhost:3000`.
+
+Use `npm.cmd run dev` only when testing the plain Next.js app without Socket.io. Phase 3 realtime development uses the custom server wrapper through `npm.cmd run dev:socket`.
 
 ## Seed / Demo Credentials
 
@@ -180,6 +182,6 @@ Add the deployment URL to this README after the app is live.
 
 - Phase 1 complete: frontend preview, documentation, env example, Docker Compose, screenshots, lint, and build.
 - Phase 2 complete: auth, database schema, seed script, workspace APIs, board/column/card APIs, invite APIs, and permission checks.
-- Phase 3: add Socket.io gateway, board rooms, Redis pub/sub, presence, realtime movement, and persistence.
+- Phase 3 in progress: custom Socket.io server wrapper, board rooms, Redis pub/sub, presence, realtime movement, and persistence.
 - Phase 4: add API/socket/frontend tests, realtime GIF, README final polish, and GitHub profile/pinned repo updates.
 - Phase 5: deploy production demo and add the live URL to README and CV.
