@@ -96,12 +96,35 @@ type ConnectionStatus = "idle" | "loading" | "connected" | "offline" | "error";
 type AuthMode = "login" | "register";
 type AppView = "board" | "activity" | "team" | "access";
 
+const sessionStorageKey = "liveboard.session";
 const demoCredentials = {
   email: "admin@liveboard.dev",
   password: "LiveBoardDemo123!",
 };
 
 const tagTones = ["blue", "green", "red", "gold"] as const;
+
+function readStoredSession() {
+  try {
+    const stored = window.localStorage.getItem(sessionStorageKey);
+
+    if (!stored) {
+      return null;
+    }
+
+    return JSON.parse(stored) as LoginResponse;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSession(session: LoginResponse) {
+  window.localStorage.setItem(sessionStorageKey, JSON.stringify(session));
+}
+
+function clearStoredSession() {
+  window.localStorage.removeItem(sessionStorageKey);
+}
 
 function initials(name: string) {
   return name
@@ -192,6 +215,7 @@ export default function Home() {
     role: "MEMBER",
   });
   const [inviteStatus, setInviteStatus] = useState("");
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const boardId = board?.id;
 
   async function loadWorkspace(nextToken: string, nextUser: AuthUser) {
@@ -251,6 +275,24 @@ export default function Home() {
     setStatusText("Connecting socket");
   }
 
+  useEffect(() => {
+    const storedSession = readStoredSession();
+
+    if (!storedSession) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void loadWorkspace(storedSession.token, storedSession.user).catch(() => {
+        clearStoredSession();
+        setStatus("idle");
+        setStatusText("Session expired");
+      });
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, []);
+
   async function authenticate(credentials: {
     name?: string;
     email: string;
@@ -275,6 +317,7 @@ export default function Home() {
       }
 
       const auth = (await response.json()) as LoginResponse;
+      writeStoredSession(auth);
       await loadWorkspace(auth.token, auth.user);
     } catch (error) {
       setStatus("error");
@@ -301,6 +344,7 @@ export default function Home() {
   function logout() {
     socketRef.current?.disconnect();
     socketRef.current = null;
+    clearStoredSession();
     setToken(null);
     setUser(null);
     setWorkspace(null);
@@ -482,6 +526,27 @@ export default function Home() {
       columnId: nextColumn.id,
       position: nextPosition,
     });
+  }
+
+  function moveCardToColumn(card: BoardCard, column: BoardColumn) {
+    const socket = socketRef.current;
+
+    if (!socket || card.columnId === column.id) {
+      return;
+    }
+
+    const nextPosition =
+      (column.cards.at(-1)?.position ?? column.position) + 1000;
+
+    socket.emit("card:update", {
+      cardId: card.id,
+      columnId: column.id,
+      position: nextPosition,
+    });
+  }
+
+  function findCard(cardId: string) {
+    return board?.columns.flatMap((column) => column.cards).find((card) => card.id === cardId);
   }
 
   async function createInvite(event: FormEvent<HTMLFormElement>) {
@@ -732,9 +797,37 @@ export default function Home() {
                     </button>
                   </header>
 
-                  <div className={styles.cardList}>
+                  <div
+                    className={`${styles.cardList} ${
+                      draggedCardId ? styles.dropReady : ""
+                    }`}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const cardId = event.dataTransfer.getData("text/plain");
+                      const card = findCard(cardId);
+
+                      if (card) {
+                        moveCardToColumn(card, column);
+                      }
+
+                      setDraggedCardId(null);
+                    }}
+                  >
                     {column.cards.map((card, cardIndex) => (
-                      <article className={styles.taskCard} key={card.id}>
+                      <article
+                        className={`${styles.taskCard} ${
+                          draggedCardId === card.id ? styles.draggingCard : ""
+                        }`}
+                        draggable
+                        key={card.id}
+                        onDragEnd={() => setDraggedCardId(null)}
+                        onDragStart={(event) => {
+                          setDraggedCardId(card.id);
+                          event.dataTransfer.setData("text/plain", card.id);
+                          event.dataTransfer.effectAllowed = "move";
+                        }}
+                      >
                         <div className={styles.cardTop}>
                           <GripVertical size={16} />
                           <span

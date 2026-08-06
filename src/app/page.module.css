@@ -424,6 +424,14 @@
   gap: 10px;
   min-height: 332px;
   margin: 8px 0 12px;
+  border-radius: 8px;
+  transition: background 140ms ease, outline-color 140ms ease;
+}
+
+.dropReady {
+  outline: 2px dashed #9abbe4;
+  outline-offset: 4px;
+  background: #e8f1ff;
 }
 
 .taskCard {
@@ -433,6 +441,16 @@
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 8px 22px rgb(20 37 54 / 7%);
+  cursor: grab;
+}
+
+.taskCard:active {
+  cursor: grabbing;
+}
+
+.draggingCard {
+  opacity: 0.55;
+  outline: 2px solid #2a7de1;
 }
 
 .cardTop {
