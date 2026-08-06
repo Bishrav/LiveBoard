@@ -27,6 +27,9 @@ COPY --from=builder /app/server.ts ./server.ts
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 EXPOSE 3000
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["npm", "run", "start:socket"]

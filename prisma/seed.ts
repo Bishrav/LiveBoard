@@ -42,6 +42,48 @@ async function main() {
     },
   });
 
+  await prisma.workspaceMember.upsert({
+    where: {
+      workspaceId_userId: {
+        workspaceId: workspace.id,
+        userId: admin.id,
+      },
+    },
+    update: { role: WorkspaceRole.OWNER },
+    create: {
+      workspaceId: workspace.id,
+      userId: admin.id,
+      role: WorkspaceRole.OWNER,
+    },
+  });
+
+  await prisma.workspaceMember.upsert({
+    where: {
+      workspaceId_userId: {
+        workspaceId: workspace.id,
+        userId: member.id,
+      },
+    },
+    update: { role: WorkspaceRole.MEMBER },
+    create: {
+      workspaceId: workspace.id,
+      userId: member.id,
+      role: WorkspaceRole.MEMBER,
+    },
+  });
+
+  const existingBoard = await prisma.board.findFirst({
+    where: {
+      workspaceId: workspace.id,
+      title: "Real-time delivery board",
+    },
+    select: { id: true },
+  });
+
+  if (existingBoard) {
+    return;
+  }
+
   const board = await prisma.board.create({
     data: {
       workspaceId: workspace.id,
