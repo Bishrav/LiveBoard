@@ -2,7 +2,7 @@
 
 LiveBoard is a real-time collaborative task manager built to demonstrate production-style full-stack engineering: live board updates, workspace permissions, JWT auth, PostgreSQL persistence, Redis pub/sub, Docker-based local services, and CI-ready tests.
 
-> Portfolio status: Phase 4 is complete at code level. The frontend preview, Prisma schema, demo seed, JWT auth, REST APIs, permission checks, custom Socket.io server, board rooms, live presence, realtime card events, Redis pub/sub adapter, automated unit/API/socket tests, GitHub Actions CI, coverage tooling, docs, screenshots, Docker services, lint, and build checks are ready. Deployment is the next implementation milestone.
+> Portfolio status: Phase 5 is in progress. The frontend preview, Prisma schema, demo seed, JWT auth, REST APIs, permission checks, custom Socket.io server, board rooms, live presence, realtime card events, Redis pub/sub adapter, automated unit/API/socket tests, GitHub Actions CI, coverage tooling, docs, screenshots, Docker services, deployment health check, and Railway Docker configuration are ready. The final remaining Phase 5 step is publishing the live production URL.
 
 ## Live Links
 
@@ -16,6 +16,7 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 | Architecture diagram | [`docs/architecture.mmd`](docs/architecture.mmd) |
 | Schema diagram | [`docs/schema.mmd`](docs/schema.mmd) |
 | API overview | [`docs/api-overview.md`](docs/api-overview.md) |
+| Deployment runbook | [`docs/deployment.md`](docs/deployment.md) |
 
 ## Features
 
@@ -38,6 +39,8 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 - Realtime card create, update, move, and delete events backed by PostgreSQL persistence.
 - Unit, API integration, and Socket.io integration tests with Vitest.
 - GitHub Actions CI for Prisma generation, migrations, tests, lint, and production build.
+- Production health endpoint at `GET /api/health` for deployment checks.
+- Dockerfile and Railway configuration for running the custom Socket.io server in production.
 - PostgreSQL schema for users, workspaces, boards, columns, cards, invites, and activity events.
 - Docker Compose for local PostgreSQL and Redis.
 - Portfolio checklist for GitHub readiness in [`docs/github-portfolio-standard.md`](docs/github-portfolio-standard.md).
@@ -80,6 +83,7 @@ Full ERD: [`docs/schema.mmd`](docs/schema.mmd)
 The backend uses REST endpoints for persistent state and Socket.io events for realtime board updates.
 
 - Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
+- Health: `GET /api/health`
 - Workspaces: `GET /api/workspaces`, `POST /api/workspaces`, `POST /api/workspaces/:workspaceId/invites`
 - Boards: `GET /api/boards/:boardId`, `POST /api/workspaces/:workspaceId/boards`
 - Columns: `POST /api/boards/:boardId/columns`, `PATCH /api/columns/:columnId`
@@ -191,12 +195,17 @@ Verified acceptance scenarios:
 
 Recommended deployment:
 
-- Frontend/app: Vercel or Railway.
-- PostgreSQL: Railway, Supabase, Neon, or Vercel Marketplace database.
-- Redis: Railway or Upstash.
+- App service: Railway Docker deployment running `npm run start:socket`.
+- PostgreSQL: Railway Postgres, Supabase, or Neon.
+- Redis: Railway Redis or Upstash.
 - Secrets: deployment provider environment variables only.
+- Health check: `GET /api/health`.
+
+LiveBoard uses a custom `server.ts` wrapper because Next.js App Router cannot host Socket.io as a native serverless route. Railway is the recommended single-service deployment target for the full realtime demo. Vercel can host the Next.js REST/frontend layer, but a separate long-running Socket.io service would still be required for realtime collaboration.
 
 Add the deployment URL to this README after the app is live.
+
+Full deployment runbook: [`docs/deployment.md`](docs/deployment.md)
 
 ## Roadmap
 
@@ -204,4 +213,4 @@ Add the deployment URL to this README after the app is live.
 - Phase 2 complete: auth, database schema, seed script, workspace APIs, board/column/card APIs, invite APIs, and permission checks.
 - Phase 3 complete: custom Socket.io server wrapper, authenticated board rooms, Redis pub/sub, presence, realtime card create/update/move/delete, and frontend socket integration.
 - Phase 4 complete: unit tests, API integration tests, Socket.io integration tests, coverage command, GitHub Actions CI, realtime proof screenshots, and README polish.
-- Phase 5: deploy production demo and add the live URL to README and CV.
+- Phase 5 in progress: production health endpoint, Dockerfile, Railway configuration, deployment runbook, then deploy production demo and add the live URL to README and CV.
