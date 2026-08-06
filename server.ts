@@ -525,9 +525,24 @@ async function main() {
     const pubClient = createClient({ url: process.env.REDIS_URL });
     const subClient = pubClient.duplicate();
 
-    await Promise.all([pubClient.connect(), subClient.connect()]);
-    io.adapter(createAdapter(pubClient, subClient));
-    console.log("Socket.io Redis adapter connected");
+    pubClient.on("error", () => {
+      // Connection failures are handled by the startup fallback below.
+    });
+    subClient.on("error", () => {
+      // Connection failures are handled by the startup fallback below.
+    });
+
+    try {
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log("Socket.io Redis adapter connected");
+    } catch (error) {
+      console.warn("Socket.io Redis adapter unavailable; using in-memory adapter", error);
+      await Promise.allSettled([
+        pubClient.isOpen ? pubClient.quit() : Promise.resolve(),
+        subClient.isOpen ? subClient.quit() : Promise.resolve(),
+      ]);
+    }
   }
 
   registerLiveBoardSocket(io);

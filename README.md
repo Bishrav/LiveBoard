@@ -27,6 +27,8 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 - Trello-style board with columns and draggable cards.
 - Live presence indicators for online teammates.
 - Activity stream for board movement and collaboration events.
+- Explicit login/register screen with demo workspace shortcut and logout.
+- Productized Board, Activity, Team, and Access views.
 - Workspace invites and role-based access for owner, admin, and member roles.
 
 ### Engineering Features
