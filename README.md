@@ -9,6 +9,7 @@ LiveBoard is a real-time collaborative task manager built to demonstrate product
 | Resource | Link |
 | --- | --- |
 | Live demo | [https://liveboard-production-6a27.up.railway.app](https://liveboard-production-6a27.up.railway.app) |
+| Live deployment screenshot | [`docs/screenshots/live-deployment.png`](docs/screenshots/live-deployment.png) |
 | Desktop preview | [`docs/screenshots/dashboard.png`](docs/screenshots/dashboard.png) |
 | Mobile preview | [`docs/screenshots/mobile-board.png`](docs/screenshots/mobile-board.png) |
 | Realtime screenshot | [`docs/screenshots/phase-3-realtime-board.png`](docs/screenshots/phase-3-realtime-board.png) |
@@ -94,6 +95,10 @@ The backend uses REST endpoints for persistent state and Socket.io events for re
 Full route table: [`docs/api-overview.md`](docs/api-overview.md)
 
 ## Screenshots
+
+### Live Deployment
+
+![LiveBoard live Railway deployment](docs/screenshots/live-deployment.png)
 
 ### Desktop Preview
 
