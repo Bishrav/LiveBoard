@@ -2,13 +2,13 @@
 
 LiveBoard is a real-time collaborative task manager built to demonstrate production-style full-stack engineering: live board updates, workspace permissions, JWT auth, PostgreSQL persistence, Redis pub/sub, Docker-based local services, and CI-ready tests.
 
-> Portfolio status: Phase 5 is in progress. The frontend preview, Prisma schema, demo seed, JWT auth, REST APIs, permission checks, custom Socket.io server, board rooms, live presence, realtime card events, Redis pub/sub adapter, automated unit/API/socket tests, GitHub Actions CI, coverage tooling, docs, screenshots, Docker services, deployment health check, and Railway Docker configuration are ready. The final remaining Phase 5 step is publishing the live production URL.
+> Portfolio status: Phase 5 is complete. The frontend preview, Prisma schema, demo seed, JWT auth, REST APIs, permission checks, custom Socket.io server, board rooms, live presence, realtime card events, Redis pub/sub adapter, automated unit/API/socket tests, GitHub Actions CI, coverage tooling, docs, screenshots, Docker services, deployment health check, Railway Docker configuration, and live production demo are ready.
 
 ## Live Links
 
 | Resource | Link |
 | --- | --- |
-| Live demo | Coming after deployment |
+| Live demo | [https://liveboard-production-6a27.up.railway.app](https://liveboard-production-6a27.up.railway.app) |
 | Desktop preview | [`docs/screenshots/dashboard.png`](docs/screenshots/dashboard.png) |
 | Mobile preview | [`docs/screenshots/mobile-board.png`](docs/screenshots/mobile-board.png) |
 | Realtime screenshot | [`docs/screenshots/phase-3-realtime-board.png`](docs/screenshots/phase-3-realtime-board.png) |
@@ -203,7 +203,7 @@ Recommended deployment:
 
 LiveBoard uses a custom `server.ts` wrapper because Next.js App Router cannot host Socket.io as a native serverless route. Railway is the recommended single-service deployment target for the full realtime demo. Vercel can host the Next.js REST/frontend layer, but a separate long-running Socket.io service would still be required for realtime collaboration.
 
-Add the deployment URL to this README after the app is live.
+Production demo: [https://liveboard-production-6a27.up.railway.app](https://liveboard-production-6a27.up.railway.app)
 
 Full deployment runbook: [`docs/deployment.md`](docs/deployment.md)
 
@@ -213,4 +213,4 @@ Full deployment runbook: [`docs/deployment.md`](docs/deployment.md)
 - Phase 2 complete: auth, database schema, seed script, workspace APIs, board/column/card APIs, invite APIs, and permission checks.
 - Phase 3 complete: custom Socket.io server wrapper, authenticated board rooms, Redis pub/sub, presence, realtime card create/update/move/delete, and frontend socket integration.
 - Phase 4 complete: unit tests, API integration tests, Socket.io integration tests, coverage command, GitHub Actions CI, realtime proof screenshots, and README polish.
-- Phase 5 in progress: production health endpoint, Dockerfile, Railway configuration, deployment runbook, then deploy production demo and add the live URL to README and CV.
+- Phase 5 complete: production health endpoint, Dockerfile, Railway configuration, deployment runbook, deployed Railway demo, production Postgres/Redis services, startup migrations, demo seed data, and public health verification.

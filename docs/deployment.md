@@ -7,8 +7,9 @@ LiveBoard uses a custom `server.ts` wrapper for Socket.io, so the production hos
 - App service: Railway Docker deployment.
 - Database: Railway Postgres or Neon.
 - Redis: Railway Redis or Upstash Redis.
-- Start command: `npm run start:socket`.
+- Start command: `./docker-entrypoint.sh npm run start:socket`.
 - Health check: `/api/health`.
+- Live URL: `https://liveboard-production-6a27.up.railway.app`.
 
 ## Required Environment Variables
 
@@ -20,6 +21,7 @@ JWT_EXPIRES_IN=7d
 NEXT_PUBLIC_APP_URL=https://your-liveboard-domain
 SOCKET_CORS_ORIGIN=https://your-liveboard-domain
 NODE_ENV=production
+RUN_DEMO_SEED=true
 ```
 
 ## First Deployment Steps
@@ -29,13 +31,13 @@ NODE_ENV=production
 3. Copy the generated `DATABASE_URL` and `REDIS_URL` into the app service variables.
 4. Add the auth and public URL variables listed above.
 5. Deploy from `master`; Railway will use `Dockerfile` and `railway.json`.
-6. Run the production migration once:
+6. The Docker entrypoint runs production migrations on container startup:
 
 ```bash
 npx prisma migrate deploy
 ```
 
-7. Optional for demo data:
+7. Demo data is seeded on startup when `RUN_DEMO_SEED=true`:
 
 ```bash
 npm run db:seed
@@ -44,7 +46,7 @@ npm run db:seed
 8. Verify:
 
 ```bash
-curl https://your-liveboard-domain/api/health
+curl https://liveboard-production-6a27.up.railway.app/api/health
 ```
 
 Expected healthy response:
@@ -62,6 +64,6 @@ Expected healthy response:
 
 ## Post-Deploy Portfolio Updates
 
-- Replace the README live demo placeholder with the deployed URL.
-- Add the deployed URL to the CV LiveBoard bullet.
+- README live demo URL is published.
+- CV LiveBoard bullet includes the deployed URL.
 - Capture one fresh screenshot from the live environment if the UI changes.
